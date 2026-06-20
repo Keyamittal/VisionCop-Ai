@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { 
   Upload, Sliders, ShieldAlert, CheckCircle, 
-  RefreshCw, Cpu, Award, Zap, Image as ImageIcon 
+  RefreshCw, Cpu, Award, Zap, Image as ImageIcon,
+  X, Eye
 } from "lucide-react";
 
 export default function AnalyzerView() {
@@ -9,6 +10,10 @@ export default function AnalyzerView() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+
+  // Lightbox modal state
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [expandedType, setExpandedType] = useState<"preprocessed" | "annotated">("annotated");
 
   // Preprocessing options
   const [options, setOptions] = useState({
@@ -192,11 +197,6 @@ export default function AnalyzerView() {
           <div className="bg-card border border-border overflow-hidden shadow-sm min-h-[400px] flex flex-col">
             <div className="bg-background/60 p-4 border-b border-border flex justify-between items-center">
               <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">Evidence Output</span>
-              {result && (
-                <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 border border-emerald-500/20 font-bold">
-                  Pipeline Complete
-                </span>
-              )}
             </div>
 
             {/* Canvas Area */}
@@ -229,24 +229,38 @@ export default function AnalyzerView() {
                       <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider block mb-1.5">
                         Preprocessed Feed
                       </span>
-                      <div className="border border-border overflow-hidden bg-card">
+                      <div 
+                        onClick={() => { setExpandedType("preprocessed"); setIsExpanded(true); }}
+                        className="border border-border overflow-hidden bg-card relative group cursor-pointer"
+                      >
                         <img 
                           src={`http://127.0.0.1:8000/${result.preprocessed_image}`} 
                           alt="Preprocessed Frame" 
                           className="w-full aspect-video object-contain"
                         />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200 gap-1.5 text-xs text-white font-semibold">
+                          <Eye size={16} />
+                          Expand View
+                        </div>
                       </div>
                     </div>
                     <div>
                       <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider block mb-1.5">
                         Annotated Evidence Output
                       </span>
-                      <div className="border border-border overflow-hidden bg-card">
+                      <div 
+                        onClick={() => { setExpandedType("annotated"); setIsExpanded(true); }}
+                        className="border border-border overflow-hidden bg-card relative group cursor-pointer"
+                      >
                         <img 
                           src={`http://127.0.0.1:8000/${result.output_image}`} 
                           alt="Annotated Frame" 
                           className="w-full aspect-video object-contain"
                         />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200 gap-1.5 text-xs text-white font-semibold">
+                          <Eye size={16} />
+                          Expand View
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -308,13 +322,151 @@ export default function AnalyzerView() {
                   </span>
                 </div>
               </div>
-
             </div>
           )}
 
         </div>
-
       </div>
+
+      {/* Lightbox Modal / Expanded View */}
+      {isExpanded && result && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm transition-all duration-300">
+          <div className="bg-card border border-border w-full max-w-5xl overflow-hidden shadow-2xl flex flex-col md:flex-row max-h-[90vh]">
+            
+            {/* Left Column: Image Viewer (2/3 width) */}
+            <div className="flex-1 flex flex-col bg-background/40 border-r border-border/60 relative p-6 justify-between min-h-[350px]">
+              
+              {/* Image Header / Tab Selector */}
+              <div className="flex items-center justify-between mb-4 border-b border-border/40 pb-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+                  {expandedType === "preprocessed" ? "Preprocessed Feed View" : "Annotated Evidence View"}
+                </span>
+                
+                {/* View toggle */}
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => setExpandedType("preprocessed")}
+                    className={`px-3 py-1.5 text-[10px] font-semibold transition-all ${
+                      expandedType === "preprocessed" 
+                        ? "bg-purple-600/10 text-purple-400 border border-purple-500"
+                        : "bg-transparent text-zinc-400 hover:text-white border border-border"
+                    }`}
+                  >
+                    Preprocessed
+                  </button>
+                  <button 
+                    onClick={() => setExpandedType("annotated")}
+                    className={`px-3 py-1.5 text-[10px] font-semibold transition-all ${
+                      expandedType === "annotated" 
+                        ? "bg-purple-600/10 text-purple-400 border border-purple-500"
+                        : "bg-transparent text-zinc-400 hover:text-white border border-border"
+                    }`}
+                  >
+                    Annotated Output
+                  </button>
+                </div>
+              </div>
+
+              {/* Large Image display */}
+              <div className="flex-1 flex items-center justify-center overflow-hidden border border-border bg-background p-2">
+                <img 
+                  src={expandedType === "preprocessed" 
+                    ? `http://127.0.0.1:8000/${result.preprocessed_image}` 
+                    : `http://127.0.0.1:8000/${result.output_image}`
+                  } 
+                  alt="Expanded Capture" 
+                  className="w-full h-full max-h-[60vh] object-contain"
+                />
+              </div>
+
+            </div>
+
+            {/* Right Column: Metadata & Infractions Panel (1/3 width) */}
+            <div className="w-full md:w-80 flex flex-col justify-between bg-card p-6 border-t md:border-t-0 border-border">
+              
+              <div className="space-y-6">
+                
+                {/* Modal close & header */}
+                <div className="flex items-center justify-between pb-3 border-b border-border/60">
+                  <div>
+                    <h3 className="font-bold text-white text-sm">Evidence Inspection</h3>
+                    <p className="text-[10px] text-zinc-500 font-semibold">VisionCop AI Real-time Output</p>
+                  </div>
+                  <button 
+                    onClick={() => setIsExpanded(false)}
+                    className="p-1.5 hover:bg-background border border-border/40 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                {/* License Plate Card */}
+                <div>
+                  <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Plate Number Recognition</span>
+                  <div className="text-lg font-mono font-bold text-white tracking-widest mt-1.5 bg-background px-3 py-2.5 border border-border text-center uppercase">
+                    {result.license_plate}
+                  </div>
+                </div>
+
+                {/* Violations Summary */}
+                <div>
+                  <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider block mb-1.5">Logged Infractions</span>
+                  <div className="space-y-1.5">
+                    {result.violations.length > 0 ? (
+                      result.violations.map((v: string) => (
+                        <div 
+                          key={v} 
+                          className="text-xs text-red-400 font-semibold flex items-center gap-1.5 p-2 bg-red-500/5 border border-red-500/10"
+                        >
+                          <ShieldAlert size={12} className="text-red-400" />
+                          {v}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-xs text-emerald-400 font-semibold flex items-center gap-1.5 p-2 bg-emerald-500/5 border border-emerald-500/10">
+                        <CheckCircle size={12} className="text-emerald-400" />
+                        No Infractions Reported (Compliant)
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Metrics detail table */}
+                <div className="p-3 bg-background border border-border space-y-2 text-[11px] text-zinc-400">
+                  <p className="flex justify-between"><span>Location:</span> <span className="font-semibold text-white">Camera Intersection A-1</span></p>
+                  <p className="flex justify-between">
+                    <span>Model Confidence:</span> 
+                    <span className="font-semibold text-white flex items-center gap-1">
+                      <Cpu size={10} className="text-purple-400" />
+                      {Math.round(result.confidence * 100)}%
+                    </span>
+                  </p>
+                  <p className="flex justify-between">
+                    <span>Latency:</span> 
+                    <span className="font-semibold text-white flex items-center gap-1">
+                      <Zap size={10} className="text-amber-400" />
+                      {result.processing_time_ms} ms
+                    </span>
+                  </p>
+                </div>
+
+              </div>
+
+              {/* Close Button */}
+              <div className="mt-8 pt-4 border-t border-border/60">
+                <button 
+                  onClick={() => setIsExpanded(false)}
+                  className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-zinc-950 font-bold text-xs uppercase tracking-wider transition-colors"
+                >
+                  Close Inspection
+                </button>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );
