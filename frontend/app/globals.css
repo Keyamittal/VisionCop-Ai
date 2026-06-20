@@ -1,0 +1,120 @@
+@import "tailwindcss";
+
+:root {
+  --background: #090716; /* Rich dark purple-black theme color */
+  --foreground: #fafafa;
+  --card: #110e24; /* Coordinating dark purple-black card background */
+  --card-foreground: #fafafa;
+  --popover: #090716;
+  --popover-foreground: #fafafa;
+  --primary: #faf9ff; /* Extremely light, glowing off-white lavender tint */
+  --primary-foreground: #090716; /* Dark text for light background */
+  --secondary: #27272a;
+  --secondary-foreground: #fafafa;
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa;
+  --accent: #27272a;
+  --accent-foreground: #fafafa;
+  --destructive: #ef4444;
+  --destructive-foreground: #fafafa;
+  --border: #1d1836; /* Lavender dark border */
+  --input: #1d1836;
+  --ring: #d4c8ff; /* Very pale lavender ring */
+  --radius: 0px; /* Sharp corners */
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* Force all blue, purple, violet, and indigo colors to compile as extremely pale glowing lavender tints */
+  --color-blue-50: #faf8ff;
+  --color-blue-100: #f3edff;
+  --color-blue-200: #e8ddff;
+  --color-blue-300: #dccfff;
+  --color-blue-400: #d0bcff;
+  --color-blue-500: #beabff;
+  --color-blue-600: #ab96ff;
+  --color-blue-700: #957dfd;
+  --color-blue-800: #7e62fa;
+  --color-blue-900: #6544ee;
+  --color-blue-950: #12093a;
+
+  --color-purple-50: #faf8ff;
+  --color-purple-100: #f3edff;
+  --color-purple-200: #e8ddff;
+  --color-purple-300: #dccfff;
+  --color-purple-400: #d0bcff;
+  --color-purple-500: #beabff;
+  --color-purple-600: #ab96ff;
+  --color-purple-700: #957dfd;
+  --color-purple-800: #7e62fa;
+  --color-purple-900: #6544ee;
+  --color-purple-950: #12093a;
+
+  --color-violet-50: #faf8ff;
+  --color-violet-100: #f3edff;
+  --color-violet-200: #e8ddff;
+  --color-violet-300: #dccfff;
+  --color-violet-400: #d0bcff;
+  --color-violet-500: #beabff;
+  --color-violet-600: #ab96ff;
+  --color-violet-700: #957dfd;
+  --color-violet-800: #7e62fa;
+  --color-violet-900: #6544ee;
+  --color-violet-950: #12093a;
+
+  --color-indigo-50: #faf8ff;
+  --color-indigo-100: #f3edff;
+  --color-indigo-200: #e8ddff;
+  --color-indigo-300: #dccfff;
+  --color-indigo-400: #d0bcff;
+  --color-indigo-500: #beabff;
+  --color-indigo-600: #ab96ff;
+  --color-indigo-700: #957dfd;
+  --color-indigo-800: #7e62fa;
+  --color-indigo-900: #6544ee;
+  --color-indigo-950: #12093a;
+}
+
+/* Force sharp edges on ALL elements across the entire app */
+*, *::before, *::after {
+  border-radius: 0px !important;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar with sharp edges */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 0px !important;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
+}

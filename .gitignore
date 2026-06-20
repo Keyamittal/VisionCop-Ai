@@ -1,0 +1,42 @@
+# Dependency folders
+node_modules/
+backend/venv/
+frontend/node_modules/
+
+# NextJS build/out folders
+frontend/.next/
+frontend/out/
+frontend/build/
+*.tsbuildinfo
+frontend/next-env.d.ts
+
+# Local database
+backend/violations.db
+
+# Python cache and byte-code
+__pycache__/
+backend/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Model Weights
+backend/yolov8n.pt
+
+# Temporary uploaded files and output files
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/*_output.jpg
+backend/output.jpg
+backend/final_output.jpg
+backend/helmet_output.jpg
+backend/ocr_output.jpg
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
