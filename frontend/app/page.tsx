@@ -10,17 +10,40 @@ import SplashScreen from "../components/SplashScreen";
 export default function Home() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [showSplash, setShowSplash] = useState(true);
+  const [historyFilters, setHistoryFilters] = useState<{
+    search?: string;
+    violationType?: string;
+    vehicleType?: string;
+    date?: string;
+  } | null>(null);
+
+  const handleSelectMetric = (metric: "infractions" | "compliance" | "today") => {
+    if (metric === "infractions") {
+      setHistoryFilters({ violationType: "INFRACTIONS" });
+    } else if (metric === "compliance") {
+      setHistoryFilters({ violationType: "COMPLIANT" });
+    } else if (metric === "today") {
+      const todayStr = new Date().toISOString().split("T")[0];
+      setHistoryFilters({ date: todayStr });
+    }
+    setActiveTab("history");
+  };
 
   const renderContent = () => {
     switch (activeTab) {
       case "dashboard":
-        return <DashboardView />;
+        return <DashboardView onSelectMetric={handleSelectMetric} />;
       case "analyzer":
         return <AnalyzerView />;
       case "history":
-        return <HistoryView />;
+        return (
+          <HistoryView 
+            initialFilters={historyFilters} 
+            onClearFilters={() => setHistoryFilters(null)} 
+          />
+        );
       default:
-        return <DashboardView />;
+        return <DashboardView onSelectMetric={handleSelectMetric} />;
     }
   };
 
@@ -31,7 +54,13 @@ export default function Home() {
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-background font-sans">
       {/* Sidebar navigation */}
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Sidebar 
+        activeTab={activeTab} 
+        setActiveTab={(tab) => {
+          setActiveTab(tab);
+          setHistoryFilters(null);
+        }} 
+      />
       
       {/* Content pane */}
       <div className="flex-1 flex flex-col overflow-hidden">

@@ -109,6 +109,7 @@ def get_violations(
     search: str = Query(None),
     violation_type: str = Query(None),
     vehicle_type: str = Query(None),
+    date: str = Query(None),
     limit: int = 15,
     offset: int = 0
 ):
@@ -123,12 +124,21 @@ def get_violations(
         params.extend([f"%{search}%", f"%{search}%"])
         
     if violation_type:
-        query += " AND violations LIKE ?"
-        params.append(f"%{violation_type}%")
+        if violation_type == "COMPLIANT":
+            query += " AND (violations = '' OR violations IS NULL)"
+        elif violation_type == "INFRACTIONS":
+            query += " AND violations != '' AND violations IS NOT NULL"
+        else:
+            query += " AND violations LIKE ?"
+            params.append(f"%{violation_type}%")
         
     if vehicle_type:
         query += " AND vehicle_type = ?"
         params.append(vehicle_type)
+
+    if date:
+        query += " AND timestamp LIKE ?"
+        params.append(f"{date}%")
         
     # Count total for pagination
     count_query = f"SELECT COUNT(*) FROM ({query})"

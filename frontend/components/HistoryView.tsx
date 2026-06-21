@@ -18,7 +18,17 @@ interface Record {
   processing_time_ms: number;
 }
 
-export default function HistoryView() {
+interface HistoryViewProps {
+  initialFilters?: {
+    search?: string;
+    violationType?: string;
+    vehicleType?: string;
+    date?: string;
+  } | null;
+  onClearFilters?: () => void;
+}
+
+export default function HistoryView({ initialFilters, onClearFilters }: HistoryViewProps = {}) {
   const [records, setRecords] = useState<Record[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -29,9 +39,20 @@ export default function HistoryView() {
   const [search, setSearch] = useState("");
   const [violationType, setViolationType] = useState("");
   const [vehicleType, setVehicleType] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
   
   // Selected detail modal record
   const [selectedRecord, setSelectedRecord] = useState<Record | null>(null);
+
+  useEffect(() => {
+    if (initialFilters) {
+      setSearch(initialFilters.search || "");
+      setViolationType(initialFilters.violationType || "");
+      setVehicleType(initialFilters.vehicleType || "");
+      setDateFilter(initialFilters.date || "");
+      setOffset(0);
+    }
+  }, [initialFilters]);
 
   const fetchRecords = async () => {
     setLoading(true);
@@ -40,6 +61,7 @@ export default function HistoryView() {
       if (search) url += `&search=${encodeURIComponent(search)}`;
       if (violationType) url += `&violation_type=${encodeURIComponent(violationType)}`;
       if (vehicleType) url += `&vehicle_type=${encodeURIComponent(vehicleType)}`;
+      if (dateFilter) url += `&date=${encodeURIComponent(dateFilter)}`;
 
       const response = await fetch(url);
       const data = await response.json();
@@ -54,7 +76,7 @@ export default function HistoryView() {
 
   useEffect(() => {
     fetchRecords();
-  }, [offset, violationType, vehicleType]);
+  }, [offset, violationType, vehicleType, dateFilter]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +88,9 @@ export default function HistoryView() {
     setSearch("");
     setViolationType("");
     setVehicleType("");
+    setDateFilter("");
     setOffset(0);
+    if (onClearFilters) onClearFilters();
     // Explicitly call load after reset next tick
     setTimeout(() => {
       fetchRecords();
@@ -135,6 +159,20 @@ export default function HistoryView() {
           {/* Selector dropdowns */}
           <div className="flex flex-wrap gap-3 w-full md:w-auto items-center">
             
+            {/* Date filter pill */}
+            {dateFilter && (
+              <span className="text-[10px] bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2.5 py-1.5 font-semibold flex items-center gap-1 shrink-0">
+                Date: {dateFilter}
+                <button 
+                  type="button" 
+                  onClick={() => { setDateFilter(""); if (onClearFilters) onClearFilters(); }} 
+                  className="hover:text-white cursor-pointer ml-1"
+                >
+                  <X size={10} />
+                </button>
+              </span>
+            )}
+
             {/* Infraction Category */}
             <div className="relative shrink-0">
               <select
@@ -145,7 +183,9 @@ export default function HistoryView() {
                 }}
                 className="bg-background border border-border pl-3 pr-8 py-2.5 text-xs text-zinc-300 focus:outline-none focus:border-purple-500 cursor-pointer appearance-none"
               >
-                <option value="">All Infractions</option>
+                <option value="">All Records</option>
+                <option value="INFRACTIONS">All Infractions Only</option>
+                <option value="COMPLIANT">No Infractions (Compliant)</option>
                 {VIOLATION_OPTIONS.map(opt => (
                   <option key={opt} value={opt}>{opt}</option>
                 ))}
@@ -177,7 +217,7 @@ export default function HistoryView() {
               Search
             </button>
 
-            {(search || violationType || vehicleType) && (
+            {(search || violationType || vehicleType || dateFilter) && (
               <button
                 type="button"
                 onClick={handleResetFilters}

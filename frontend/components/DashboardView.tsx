@@ -30,7 +30,11 @@ interface Analytics {
   };
 }
 
-export default function DashboardView() {
+interface DashboardViewProps {
+  onSelectMetric?: (metric: "infractions" | "compliance" | "today") => void;
+}
+
+export default function DashboardView({ onSelectMetric }: DashboardViewProps = {}) {
   const [stats, setStats] = useState<Stats | null>(null);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [loading, setLoading] = useState(true);
@@ -101,10 +105,13 @@ export default function DashboardView() {
       </div>
 
       {/* Grid of Key Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         
         {/* Total Infractions Card */}
-        <div className="bg-card border border-border/80 p-5 flex items-center gap-4 relative overflow-hidden group hover:border-border/80 transition-all duration-200">
+        <div 
+          onClick={() => onSelectMetric?.("infractions")}
+          className="bg-card border border-border/80 p-5 flex items-center gap-4 relative overflow-hidden group hover:border-border/80 transition-all duration-200 cursor-pointer"
+        >
           <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/5 blur-xl group-hover:bg-red-500/10 transition-colors"></div>
           <div className="p-3 bg-red-500/10 text-red-400">
             <ShieldAlert size={22} />
@@ -117,7 +124,10 @@ export default function DashboardView() {
         </div>
 
         {/* Compliance Rate Card */}
-        <div className="bg-card border border-border/80 p-5 flex items-center gap-4 relative overflow-hidden group hover:border-border/80 transition-all duration-200">
+        <div 
+          onClick={() => onSelectMetric?.("compliance")}
+          className="bg-card border border-border/80 p-5 flex items-center gap-4 relative overflow-hidden group hover:border-border/80 transition-all duration-200 cursor-pointer"
+        >
           <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 blur-xl group-hover:bg-emerald-500/10 transition-colors"></div>
           <div className="p-3 bg-emerald-500/10 text-emerald-400">
             <CheckCircle2 size={22} />
@@ -130,7 +140,10 @@ export default function DashboardView() {
         </div>
 
         {/* Today's Captures Card */}
-        <div className="bg-card border border-border/80 p-5 flex items-center gap-4 relative overflow-hidden group hover:border-border/80 transition-all duration-200">
+        <div 
+          onClick={() => onSelectMetric?.("today")}
+          className="bg-card border border-border/80 p-5 flex items-center gap-4 relative overflow-hidden group hover:border-border/80 transition-all duration-200 cursor-pointer"
+        >
           <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/5 blur-xl group-hover:bg-purple-500/10 transition-colors"></div>
           <div className="p-3 bg-purple-500/10 text-purple-400">
             <Camera size={22} />
@@ -139,19 +152,6 @@ export default function DashboardView() {
             <p className="text-xs text-zinc-500 font-semibold uppercase tracking-wider">Today's Captures</p>
             <h3 className="text-2xl font-bold text-white mt-1">{stats.today_records}</h3>
             <p className="text-[10px] text-zinc-400 mt-0.5">Uploaded surveillance frames</p>
-          </div>
-        </div>
-
-        {/* Inference Latency Card */}
-        <div className="bg-card border border-border/80 p-5 flex items-center gap-4 relative overflow-hidden group hover:border-border/80 transition-all duration-200">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 blur-xl group-hover:bg-amber-500/10 transition-colors"></div>
-          <div className="p-3 bg-amber-500/10 text-amber-400">
-            <Zap size={22} />
-          </div>
-          <div>
-            <p className="text-xs text-zinc-500 font-semibold uppercase tracking-wider">Average Speed</p>
-            <h3 className="text-2xl font-bold text-white mt-1">{stats.average_processing_time_ms} ms</h3>
-            <p className="text-[10px] text-zinc-400 mt-0.5">End-to-end processing pipeline</p>
           </div>
         </div>
 
