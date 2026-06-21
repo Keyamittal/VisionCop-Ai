@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { 
   Search, Filter, ShieldAlert, CheckCircle, 
-  Eye, X, ArrowLeft, ArrowRight, Activity, Zap 
+  X, ArrowLeft, ArrowRight, Activity, Zap 
 } from "lucide-react";
 
 interface Record {
@@ -217,7 +217,6 @@ export default function HistoryView() {
                   <th className="py-4 px-5">Vehicle</th>
                   <th className="py-4 px-5">Plate Number</th>
                   <th className="py-4 px-5">Violations</th>
-                  <th className="py-4 px-5 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60 text-xs">
@@ -233,7 +232,11 @@ export default function HistoryView() {
                     : `http://127.0.0.1:8000/${rec.annotated_filename}`;
 
                   return (
-                    <tr key={rec.id} className="hover:bg-background/40 transition-colors">
+                    <tr 
+                      key={rec.id} 
+                      onClick={() => setSelectedRecord(rec)}
+                      className="hover:bg-background/40 transition-colors cursor-pointer"
+                    >
                       <td className="py-3.5 px-5">
                         <div className="w-10 h-7 overflow-hidden border border-border bg-background shrink-0">
                           <img src={annotatedUrl} alt="Thumbnail" className="w-full h-full object-cover" />
@@ -267,15 +270,6 @@ export default function HistoryView() {
                             </span>
                           )}
                         </div>
-                      </td>
-                      <td className="py-3.5 px-5 text-right">
-                        <button
-                          onClick={() => setSelectedRecord(rec)}
-                          className="p-1.5 hover:bg-background text-zinc-400 hover:text-white transition-colors cursor-pointer inline-flex items-center gap-1 text-[11px] font-medium"
-                        >
-                          <Eye size={14} />
-                          Details
-                        </button>
                       </td>
                     </tr>
                   );
