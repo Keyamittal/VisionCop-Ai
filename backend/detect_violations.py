@@ -2,7 +2,7 @@ from ultralytics import YOLO
 import cv2
 
 # Load YOLO model
-model = YOLO("yolov8n.pt")
+model = YOLO("yolov8x.pt")
 
 # Load image
 image_path = "bike_test.jpg"

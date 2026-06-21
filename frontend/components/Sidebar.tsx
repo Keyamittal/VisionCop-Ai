@@ -17,18 +17,14 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
     <div className="w-64 bg-card border-r border-border flex flex-col justify-between h-screen sticky top-0">
       <div className="flex flex-col">
         {/* Brand Logo Header */}
-        <div className="p-6 border-b border-border flex items-center gap-3">
-          <div className="bg-purple-600 p-2 text-zinc-950">
-            <ShieldAlert size={20} />
-          </div>
-          <div>
-            <h1 className="font-bold text-lg leading-none bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent">
-              VisionCop AI
-            </h1>
-            <span className="text-[10px] text-zinc-500 font-semibold uppercase tracking-wider">
-              Flipkart Hackathon
-            </span>
-          </div>
+        {/* Brand Logo Header */}
+        <div className="p-6 border-b border-border flex items-center justify-center">
+          <h1 
+            className="font-bold text-lg text-white font-mono tracking-wider"
+            style={{ textShadow: "0 0 15px rgba(255, 255, 255, 0.4)" }}
+          >
+            VisionCop AI
+          </h1>
         </div>
 
         {/* Navigation Items */}

@@ -5,7 +5,7 @@ import re
 from ultralytics import YOLO
 
 # Load YOLO Model
-model = YOLO("yolov8n.pt")
+model = YOLO("yolov8x.pt")
 reader = easyocr.Reader(['en'], gpu=False)
 
 image_path = "uploads/new-delhi-indiajune-12-2025an-260nw-2643954003.jpg.webp"

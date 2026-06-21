@@ -21,7 +21,7 @@ backend/__pycache__/
 *.pyd
 
 # Model Weights
-backend/yolov8n.pt
+*.pt
 
 # Temporary uploaded files and output files
 backend/uploads/*

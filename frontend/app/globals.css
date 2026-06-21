@@ -1,25 +1,25 @@
 @import "tailwindcss";
 
 :root {
-  --background: #090716; /* Rich dark purple-black theme color */
+  --background: #10131a; /* Deep slate navy matching the capybara's cap/uniform details */
   --foreground: #fafafa;
-  --card: #2b4571; /* New dark blue box background */
+  --card: #181d26; /* Slightly lighter deep slate for cards */
   --card-foreground: #fafafa;
-  --popover: #090716;
+  --popover: #10131a;
   --popover-foreground: #fafafa;
-  --primary: #87ceeb; /* Light blue accent */
-  --primary-foreground: #090716; /* Dark text for light background */
-  --secondary: #27272a;
+  --primary: #bea078; /* Warm capybara tan/gold color */
+  --primary-foreground: #10131a;
+  --secondary: #323c46; /* Slate police-uniform blue */
   --secondary-foreground: #fafafa;
-  --muted: #27272a;
-  --muted-foreground: #a6969c; /* Dusty lavender secondary text */
-  --accent: #27272a;
-  --accent-foreground: #fafafa;
-  --destructive: #ef4444;
+  --muted: #1e2430;
+  --muted-foreground: #a0abb8;
+  --accent: #bec8dc; /* Pastel steel-blue police shirt color */
+  --accent-foreground: #10131a;
+  --destructive: #e63c32; /* Traffic light red */
   --destructive-foreground: #fafafa;
-  --border: #87ceeb; /* Light blue box borders */
-  --input: #2b4571;
-  --ring: #87ceeb;
+  --border: #232a36; /* Subtle slate border */
+  --input: #181d26;
+  --ring: #bea078;
   --radius: 0px; /* Sharp corners */
 }
 
@@ -38,54 +38,55 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
-  /* Force all blue, purple, violet, and indigo colors to compile as light blue (#87ceeb) and dusty lavender (#a6969c) theme accents */
-  --color-blue-50: #f0f8ff;
-  --color-blue-100: #e0effc;
-  --color-blue-200: #c5e0fa;
-  --color-blue-300: #a2d0f7;
-  --color-blue-400: #87ceeb;
-  --color-blue-500: #87ceeb;
-  --color-blue-600: #a6969c;
-  --color-blue-700: #2b4571;
-  --color-blue-800: #1b2a47;
-  --color-blue-900: #10182b;
-  --color-blue-950: #0a0e1a;
+  /* Force blue colors to render as steel-blue / police-uniform blue shades */
+  --color-blue-50: #f0f6fa;
+  --color-blue-100: #dce6ee;
+  --color-blue-200: #bec8dc;
+  --color-blue-300: #9eb0c8;
+  --color-blue-400: #7e98b4;
+  --color-blue-500: #5f80a0;
+  --color-blue-600: #4c6680;
+  --color-blue-700: #394d60;
+  --color-blue-800: #263340;
+  --color-blue-900: #131a20;
+  --color-blue-950: #0a0d10;
 
-  --color-purple-50: #f0f8ff;
-  --color-purple-100: #e0effc;
-  --color-purple-200: #c5e0fa;
-  --color-purple-300: #a2d0f7;
-  --color-purple-400: #87ceeb;
-  --color-purple-500: #87ceeb;
-  --color-purple-600: #a6969c;
-  --color-purple-700: #2b4571;
-  --color-purple-800: #1b2a47;
-  --color-purple-900: #10182b;
-  --color-purple-950: #0a0e1a;
+  /* Force purple, violet, and indigo to render as capybara warm brown/tan skin tones */
+  --color-purple-50: #fcfaf7;
+  --color-purple-100: #f7f0e6;
+  --color-purple-200: #eedfc9;
+  --color-purple-300: #e2cca8;
+  --color-purple-400: #d4b684;
+  --color-purple-500: #bea078;
+  --color-purple-600: #aa785a;
+  --color-purple-700: #a0785a;
+  --color-purple-800: #73543d;
+  --color-purple-900: #4c3829;
+  --color-purple-950: #261c14;
 
-  --color-violet-50: #f0f8ff;
-  --color-violet-100: #e0effc;
-  --color-violet-200: #c5e0fa;
-  --color-violet-300: #a2d0f7;
-  --color-violet-400: #87ceeb;
-  --color-violet-500: #87ceeb;
-  --color-violet-600: #a6969c;
-  --color-violet-700: #2b4571;
-  --color-violet-800: #1b2a47;
-  --color-violet-900: #10182b;
-  --color-violet-950: #0a0e1a;
+  --color-violet-50: #fcfaf7;
+  --color-violet-100: #f7f0e6;
+  --color-violet-200: #eedfc9;
+  --color-violet-300: #e2cca8;
+  --color-violet-400: #d4b684;
+  --color-violet-500: #bea078;
+  --color-violet-600: #aa785a;
+  --color-violet-700: #a0785a;
+  --color-violet-800: #73543d;
+  --color-violet-900: #4c3829;
+  --color-violet-950: #261c14;
 
-  --color-indigo-50: #f0f8ff;
-  --color-indigo-100: #e0effc;
-  --color-indigo-200: #c5e0fa;
-  --color-indigo-300: #a2d0f7;
-  --color-indigo-400: #87ceeb;
-  --color-indigo-500: #87ceeb;
-  --color-indigo-600: #a6969c;
-  --color-indigo-700: #2b4571;
-  --color-indigo-800: #1b2a47;
-  --color-indigo-900: #10182b;
-  --color-indigo-950: #0a0e1a;
+  --color-indigo-50: #fcfaf7;
+  --color-indigo-100: #f7f0e6;
+  --color-indigo-200: #eedfc9;
+  --color-indigo-300: #e2cca8;
+  --color-indigo-400: #d4b684;
+  --color-indigo-500: #bea078;
+  --color-indigo-600: #aa785a;
+  --color-indigo-700: #a0785a;
+  --color-indigo-800: #73543d;
+  --color-indigo-900: #4c3829;
+  --color-indigo-950: #261c14;
 }
 
 /* Force sharp edges on ALL elements across the entire app */
@@ -111,23 +112,23 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #27272a;
+  background: #232a36;
   border-radius: 0px !important;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46;
+  background: #323c46;
 }
 
-/* Card border and shadow glow styling based on the user's light blue color theme */
+/* Premium Card hover styling with a subtle capybara-gold glow */
 .bg-card {
   background-color: var(--card) !important;
-  border: 1px solid rgba(135, 206, 235, 0.35) !important;
-  box-shadow: 0 4px 20px rgba(135, 206, 235, 0.12) !important;
+  border: 1px solid rgba(190, 160, 120, 0.12) !important;
+  box-shadow: 0 4px 20px rgba(19, 22, 28, 0.4) !important;
   transition: border-color 0.3s ease, box-shadow 0.3s ease !important;
 }
 
 .bg-card:hover {
-  border-color: rgba(135, 206, 235, 0.6) !important;
-  box-shadow: 0 4px 24px rgba(135, 206, 235, 0.25) !important;
+  border-color: rgba(190, 160, 120, 0.35) !important;
+  box-shadow: 0 4px 24px rgba(190, 160, 120, 0.08) !important;
 }

@@ -5,8 +5,8 @@ from ultralytics import YOLO
 import easyocr
 import re
 
-# Load YOLO Model
-model = YOLO("yolov8n.pt")
+# Load YOLO Model (Upgraded to Extra Large yolov8x.pt for maximum accuracy)
+model = YOLO("yolov8x.pt")
 
 # Initialize OCR reader
 reader = easyocr.Reader(['en'], gpu=False)  # Force CPU to avoid CUDA dependency warnings in logs
