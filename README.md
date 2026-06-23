@@ -10,6 +10,10 @@ VisionCop AI is a high-performance, dual-stage computer vision platform designed
 * **Dual-Stage License Plate Localization**: Dynamically scales and extracts license plate regions based on custom-bound contour calculations.
 * **Adaptive Low-Light & Blur Preprocessing**: Enhances dark, blurry, and noisy images using Bilateral Filtering, Adaptive Binarization, and Cubic Interpolation before performing OCR.
 * **Robust Multi-Pass OCR Fallback Heuristics**: Multi-pass EasyOCR parsing handles low-confidence text and formats plates against region/state-code databases (e.g., matching standard Indian or regional plate configurations).
+* **Live WebSocket Stream Processing**: Enables real-time frame-by-frame video stream analysis at ~3 FPS via persistent WebSocket connection to the backend pipeline.
+* **Camera Calibration & ROI Configuration**: Interactive dashboard sliders to calibrate Stop Line ratios, Wrong-way detection thresholds, and Illegal Parking regions, saved dynamically to `camera_config.json`.
+* **RTO Registry Lookup**: Automated querying of the vehicle registration database (RTO) using the detected license plate to retrieve owner name, contact details, vehicle model, and insurance info.
+* **Automated E-Challan PDF Generation**: Dynamically compiles and generates professional traffic violation PDF receipts with customized fines, detailed metadata, and embedded photographic evidence.
 * **Rich Analytics Dashboard**: Visually displays traffic compliance ratios, processing latencies, daily trends, and categorical violation distributions using interactive, animated charts.
 * **Interactive Inspection History**: Features a clean history log with a side-by-side comparison of raw uploads, preprocessed crops, and annotated bounding boxes.
 
@@ -24,6 +28,8 @@ Unlike off-the-shelf license plate detection applications that rely solely on ra
 | **OCR Input Quality** | Feeds cropped regions directly into OCR (frequently fails under blur/low-res). | Performs **4x Bicubic Upscaling** and **Bilateral Edge Filtering** to enhance characters. |
 | **Binarization Mode** | Simple Otsu thresholding or direct grayscale reading. | **Adaptive Gaussian Thresholding** to isolate characters from complex backgrounds/reflections. |
 | **OCR Verification** | Single-pass read (discards low-confidence predictions). | **Three-pass verification**: matches against state-code patterns, falls back to raw alphanumeric confidence, and tries upscaled preprocessed crops sequentially. |
+| **Live Streaming** | Requires uploading separate clips or individual frames. | Real-time **WebSocket pipeline** supporting live streams from webcams or video files. |
+| **Citation Workflow** | Manual verification and offline citation processing. | Automated **RTO Lookup** and **on-demand E-Challan PDF** evidence sheet generation. |
 | **No-Match Handling** | Returns empty or fails silently. | Resolves license plates using structural vehicle context and predictive regional match rules. |
 
 ---
@@ -34,12 +40,17 @@ The project is split into a lightweight Python/FastAPI microservice backend and 
 
 ```mermaid
 graph TD
-    User([User Browser]) -->|Upload Image / Request Stats| Frontend[Next.js Frontend: Port 3002]
-    Frontend -->|POST /upload / GET /statistics| Backend[FastAPI Backend: Port 8000]
+    User([User Browser]) -->|Upload Image / Request Stats / Calibrate| Frontend[Next.js Frontend: Port 3001]
+    User -->|Live Webcam or Video Stream| Frontend
+    Frontend -->|POST /upload / GET /statistics / /config/roi| Backend[FastAPI Backend: Port 8000]
+    Frontend -->|WebSocket: /ws/video| Backend
     Backend -->|Initialize/Query DB| SQLite[(SQLite Database: violations.db)]
+    Backend -->|Read/Write ROI Config| Config[camera_config.json]
     Backend -->|Run Inference| DetectionPipeline[YOLOv8 & OpenCV Pipeline]
     DetectionPipeline -->|Preprocess Plate ROI| OCR[EasyOCR Multi-Pass Reader]
     OCR -->|Return Annotations & Plate Text| Backend
+    Backend -->|Query Registry| RTODB[(RTO Registry DB)]
+    Backend -->|Generate Citation| PDF[ReportLab E-Challan Generator]
 ```
 
 ---
@@ -126,9 +137,9 @@ From the `backend` folder:
 ### Start the Frontend Server (Next.js)
 From the `frontend` folder:
 ```bash
-npm run dev -- -p 3002
+PORT=3001 npm run dev
 ```
-* **URL**: [http://localhost:3002](http://localhost:3002)
+* **URL**: [http://localhost:3001](http://localhost:3001)
 
 ---
 
@@ -137,4 +148,4 @@ npm run dev -- -p 3002
 > [!IMPORTANT]
 > If either port is in use, verify if a background server is already running:
 > * To check backend port: `lsof -i :8000`
-> * To check frontend port: `lsof -i :3002`
+> * To check frontend port: `lsof -i :3001` (or your configured port)

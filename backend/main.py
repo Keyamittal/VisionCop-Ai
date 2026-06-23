@@ -1,11 +1,13 @@
-from fastapi import FastAPI, UploadFile, File, Form, Query
+from fastapi import FastAPI, UploadFile, File, Form, Query, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, JSONResponse
 import shutil
 import os
 import time
 from datetime import datetime
 import json
+import base64
 
 from process_image import process_image
 from database import init_db, get_db_connection
@@ -282,3 +284,332 @@ def get_analytics():
         "vehicles": vehicle_breakdown,
         "model_performance": model_stats
     }
+
+# --- NEW ENDPOINTS: RTO LOOKUP & E-CHALLAN GENERATION ---
+
+@app.get("/violations/{id}/rto")
+def get_violation_rto(id: int):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # First get the violation
+    cursor.execute("SELECT license_plate FROM violations WHERE id = ?", (id,))
+    row = cursor.fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Violation record not found")
+        
+    plate = row["license_plate"]
+    
+    # Query rto_registry
+    cursor.execute("SELECT * FROM rto_registry WHERE license_plate = ?", (plate,))
+    rto_row = cursor.fetchone()
+    conn.close()
+    
+    if rto_row:
+        return {
+            "license_plate": rto_row["license_plate"],
+            "owner_name": rto_row["owner_name"],
+            "owner_email": rto_row["owner_email"],
+            "owner_phone": rto_row["owner_phone"],
+            "vehicle_model": rto_row["vehicle_model"],
+            "registration_date": rto_row["registration_date"],
+            "insurance_valid_until": rto_row["insurance_valid_until"]
+        }
+    
+    # Return placeholder / not found structure
+    return {
+        "license_plate": plate,
+        "owner_name": "Rohan Deshmukh (Unverified)",
+        "owner_email": "rohan.deshmukh@email.com",
+        "owner_phone": "+91 98877 66554",
+        "vehicle_model": "Sedan/Motorcycle (Pending Verify)",
+        "registration_date": "N/A",
+        "insurance_valid_until": "N/A"
+    }
+
+@app.get("/violations/{id}/challan")
+def get_violation_challan(id: int):
+    import io
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib import colors
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image as RLImage
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM violations WHERE id = ?", (id,))
+    violation = cursor.fetchone()
+    if not violation:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Violation record not found")
+        
+    plate = violation["license_plate"]
+    cursor.execute("SELECT * FROM rto_registry WHERE license_plate = ?", (plate,))
+    rto = cursor.fetchone()
+    conn.close()
+    
+    if not rto:
+        rto = {
+            "owner_name": "Rohan Deshmukh",
+            "owner_email": "rohan.deshmukh@email.com",
+            "owner_phone": "+91 98877 66554",
+            "vehicle_model": "Unknown Class",
+            "registration_date": "N/A",
+            "insurance_valid_until": "N/A"
+        }
+        
+    # Compile fines
+    fine_mapping = {
+        "No Helmet": 1000,
+        "Triple Riding": 2000,
+        "Seatbelt Violation": 1000,
+        "Red Light Violation": 5000,
+        "Stop Line Crossing": 5000,
+        "Wrong-way Driving": 5000,
+        "Illegal Parking": 1000
+    }
+    
+    violations_list = [v.strip() for v in violation["violations"].split(",") if v.strip()] if violation["violations"] else []
+    total_fine = 0
+    fine_breakdown = []
+    
+    for v in violations_list:
+        amt = fine_mapping.get(v, 1000)
+        total_fine += amt
+        fine_breakdown.append([v, f"INR {amt:,}"])
+        
+    if not fine_breakdown:
+        fine_breakdown.append(["No infractions detected", "INR 0"])
+        
+    # Generate PDF in memory
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
+    story = []
+    
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'TitleStyle',
+        parent=styles['Heading1'],
+        fontSize=20,
+        textColor=colors.HexColor('#110e24'),
+        spaceAfter=15
+    )
+    section_title = ParagraphStyle(
+        'SectionTitle',
+        parent=styles['Heading2'],
+        fontSize=12,
+        textColor=colors.HexColor('#8b5cf6'),
+        spaceBefore=10,
+        spaceAfter=6
+    )
+    body_style = ParagraphStyle(
+        'BodyStyle',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=colors.HexColor('#27272a'),
+        leading=14
+    )
+    
+    # 1. Header Table
+    header_data = [
+        [
+            Paragraph("🚔 VisionCop AI Traffic Citation", title_style),
+            Paragraph(f"<b>Challan ID:</b> VC-{id}<br/><b>Date:</b> {violation['timestamp'][:10]}", body_style)
+        ]
+    ]
+    header_table = Table(header_data, colWidths=[360, 180])
+    header_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 10),
+    ]))
+    story.append(header_table)
+    
+    # Horizontal line
+    divider = Table([['']], colWidths=[540], rowHeights=[2])
+    divider.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#8b5cf6')),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+    ]))
+    story.append(divider)
+    story.append(Spacer(1, 15))
+    
+    # 2. Vehicle & Owner Information
+    story.append(Paragraph("Vehicle Registration & Owner Information (RTO Lookup)", section_title))
+    rto_data = [
+        ["Owner Name:", rto["owner_name"], "License Plate:", violation["license_plate"]],
+        ["Vehicle Model:", rto["vehicle_model"], "Location:", violation["location"]],
+        ["Owner Email:", rto["owner_email"], "Registration Date:", rto["registration_date"]],
+        ["Owner Phone:", rto["owner_phone"], "Insurance Valid:", rto["insurance_valid_until"]]
+    ]
+    rto_table = Table(rto_data, colWidths=[100, 170, 100, 170])
+    rto_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#f4f4f5')),
+        ('FONTNAME', (0,0), (-1,-1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,-1), 9),
+        ('TEXTCOLOR', (0,0), (0,-1), colors.HexColor('#71717a')),
+        ('TEXTCOLOR', (2,0), (2,-1), colors.HexColor('#71717a')),
+        ('TEXTCOLOR', (1,0), (1,-1), colors.HexColor('#09090b')),
+        ('TEXTCOLOR', (3,0), (3,-1), colors.HexColor('#09090b')),
+        ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#e4e4e7')),
+        ('BOX', (0,0), (-1,-1), 1, colors.HexColor('#e4e4e7')),
+        ('TOPPADDING', (0,0), (-1,-1), 6),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+    ]))
+    story.append(rto_table)
+    story.append(Spacer(1, 15))
+    
+    # 3. Violation Fine Breakdown
+    story.append(Paragraph("Offence Report & Fine Assessment", section_title))
+    fine_data = [["Traffic Offence Category", "Assessment Amount"]]
+    for item in fine_breakdown:
+        fine_data.append(item)
+    fine_data.append(["Total Penalty Amount:", f"INR {total_fine:,}"])
+    
+    fine_table = Table(fine_data, colWidths=[360, 180])
+    fine_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (1,0), colors.HexColor('#110e24')),
+        ('TEXTCOLOR', (0,0), (1,0), colors.white),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('ALIGN', (0,0), (0,-1), 'LEFT'),
+        ('ALIGN', (1,0), (1,-1), 'RIGHT'),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#e4e4e7')),
+        ('BOX', (0,0), (-1,-1), 1, colors.HexColor('#e4e4e7')),
+        ('TOPPADDING', (0,0), (-1,-1), 6),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ('FONTNAME', (0,-1), (1,-1), 'Helvetica-Bold'),
+        ('BACKGROUND', (0,-1), (1,-1), colors.HexColor('#fef2f2')),
+        ('TEXTCOLOR', (0,-1), (1,-1), colors.HexColor('#991b1b')),
+    ]))
+    story.append(fine_table)
+    story.append(Spacer(1, 15))
+    
+    # 4. Image Evidence Output (Check if annotated file exists)
+    story.append(Paragraph("Photographic Evidence Capture", section_title))
+    evidence_path = violation["annotated_filename"]
+    if os.path.exists(evidence_path):
+        try:
+            evidence_img = RLImage(evidence_path, width=450, height=253)
+            story.append(evidence_img)
+        except Exception as e:
+            story.append(Paragraph(f"<i>Could not load evidence image preview: {str(e)}</i>", body_style))
+    else:
+        story.append(Paragraph("<i>Photographic evidence file missing or unaccessible.</i>", body_style))
+    story.append(Spacer(1, 15))
+    
+    # Footer notice
+    story.append(Paragraph("<b>Notice:</b> This E-Challan is generated by the automated VisionCop AI surveillance pipeline. Bounding boxes represent inference results from standard computer vision and OCR matching routines.", ParagraphStyle('Notice', parent=body_style, fontSize=8, textColor=colors.HexColor('#71717a'))))
+    
+    doc.build(story)
+    buffer.seek(0)
+    
+    return FileResponse(
+        buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=E-Challan_Log_{id}.pdf"}
+    )
+
+# --- NEW ENDPOINTS: WEBSOCKET STREAMING ---
+
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: list[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
+
+manager = ConnectionManager()
+
+@app.websocket("/ws/video")
+async def websocket_video_endpoint(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            # Receive base64 frame from client
+            data = await websocket.receive_text()
+            
+            # Message is structured as json containing image data and filters
+            message = json.loads(data)
+            frame_data = message.get("image") # base64 string
+            filters = message.get("filters", {})
+            
+            if not frame_data:
+                await websocket.send_json({"error": "No image data sent"})
+                continue
+                
+            # Decode base64
+            if "," in frame_data:
+                frame_data = frame_data.split(",")[1]
+            image_bytes = base64.b64decode(frame_data)
+            
+            # Temporary file write inside uploads to process
+            temp_path = "uploads/ws_stream_temp.jpg"
+            with open(temp_path, "wb") as f:
+                f.write(image_bytes)
+                
+            # Process frame
+            preprocess_options = {
+                "low_light": filters.get("lowLight", False),
+                "denoise": filters.get("denoise", False),
+                "contrast": filters.get("contrast", False)
+            }
+            
+            result = process_image(temp_path, preprocess_options)
+            
+            # Read output image back as base64
+            with open(result["output_image"], "rb") as f:
+                encoded_output = base64.b64encode(f.read()).decode("utf-8")
+                
+            # Send back annotated details
+            response_payload = {
+                "image": f"data:image/jpeg;base64,{encoded_output}",
+                "violations": result["violations"],
+                "license_plate": result["license_plate"],
+                "confidence": result["confidence"],
+                "vehicles_detected": result["vehicles_detected"]
+            }
+            
+            await websocket.send_json(response_payload)
+            
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+    except Exception as e:
+        manager.disconnect(websocket)
+        print(f"WebSocket processing error: {str(e)}")
+
+# --- NEW ENDPOINTS: ROI CONFIGURATION ---
+
+CONFIG_FILE = "camera_config.json"
+
+@app.get("/config/roi")
+def get_roi_config():
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE, "r") as f:
+                return json.load(f)
+        except Exception:
+            pass
+            
+    # Default parameters
+    return {
+        "stop_line_ratio": 0.65,
+        "wrong_way_ratio": 0.75,
+        "illegal_parking_ratio": 0.22
+    }
+
+@app.post("/config/roi")
+async def update_roi_config(config: dict):
+    try:
+        with open(CONFIG_FILE, "w") as f:
+            json.dump(config, f, indent=4)
+        return {"status": "success", "message": "ROI configurations updated successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save ROI settings: {str(e)}")

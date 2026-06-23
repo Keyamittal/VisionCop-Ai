@@ -43,6 +43,30 @@ export default function HistoryView({ initialFilters, onClearFilters }: HistoryV
   
   // Selected detail modal record
   const [selectedRecord, setSelectedRecord] = useState<Record | null>(null);
+  const [rtoDetails, setRtoDetails] = useState<any | null>(null);
+  const [rtoLoading, setRtoLoading] = useState(false);
+
+  useEffect(() => {
+    if (selectedRecord) {
+      setRtoLoading(true);
+      fetch(`http://127.0.0.1:8000/violations/${selectedRecord.id}/rto`)
+        .then(res => {
+          if (!res.ok) throw new Error("RTO info not found");
+          return res.json();
+        })
+        .then(data => {
+          setRtoDetails(data);
+          setRtoLoading(false);
+        })
+        .catch(err => {
+          console.error("RTO details fetch failed:", err);
+          setRtoDetails(null);
+          setRtoLoading(false);
+        });
+    } else {
+      setRtoDetails(null);
+    }
+  }, [selectedRecord]);
 
   useEffect(() => {
     if (initialFilters) {
@@ -410,8 +434,7 @@ export default function HistoryView({ initialFilters, onClearFilters }: HistoryV
                       <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider block mb-1">
                         Physical Metadata Details
                       </span>
-                      <div className="p-3 bg-background border border-border h-[95px] flex flex-col justify-between text-[11px] text-zinc-400">
-                        <p className="flex justify-between"><span>Location:</span> <span className="font-medium text-white">{selectedRecord.location}</span></p>
+                      <div className="p-3 bg-background border border-border h-auto py-2 flex flex-col justify-between space-y-1.5 text-[11px] text-zinc-400">
                         <p className="flex justify-between"><span>Speed:</span> <span className="font-medium text-white">{selectedRecord.processing_time_ms} ms</span></p>
                         <p className="flex justify-between"><span>Model Confidence:</span> <span className="font-medium text-white">{Math.round(selectedRecord.confidence * 100)}%</span></p>
                       </div>
@@ -460,6 +483,39 @@ export default function HistoryView({ initialFilters, onClearFilters }: HistoryV
                         )}
                       </div>
                     </div>
+
+                    {/* RTO Owner Info Card */}
+                    <div className="p-3 bg-background border border-border/80 space-y-2 text-[11px] text-zinc-400">
+                      <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider block mb-1">RTO Owner Details</span>
+                      {rtoLoading ? (
+                        <p className="text-zinc-500 italic">Querying RTO database...</p>
+                      ) : rtoDetails ? (
+                        <>
+                          <p className="flex justify-between"><span>Owner Name:</span> <span className="font-semibold text-white">{rtoDetails.owner_name}</span></p>
+                          <p className="flex justify-between"><span>Vehicle:</span> <span className="font-semibold text-white">{rtoDetails.vehicle_model}</span></p>
+                          <p className="flex justify-between"><span>Phone:</span> <span className="font-semibold text-white">{rtoDetails.owner_phone}</span></p>
+                          <p className="flex justify-between"><span>Insurance Till:</span> <span className="font-semibold text-white">{rtoDetails.insurance_valid_until}</span></p>
+                        </>
+                      ) : (
+                        <p className="text-zinc-500 italic">No RTO registration records found.</p>
+                      )}
+                    </div>
+
+                    {/* E-Challan Download Button */}
+                    {selectedRecord.violations.length > 0 && (
+                      <div className="pt-2">
+                        <a
+                          href={`http://127.0.0.1:8000/violations/${selectedRecord.id}/challan`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="w-full flex items-center justify-center gap-2 py-2.5 bg-red-600 hover:bg-red-500 text-zinc-950 font-bold text-xs uppercase tracking-wider transition-colors text-center border border-red-500/20"
+                        >
+                          <ShieldAlert size={14} />
+                          Download E-Challan PDF
+                        </a>
+                      </div>
+                    )}
+
                   </div>
 
                   <div className="mt-8 text-[10px] text-zinc-500 border-t border-border pt-3 flex items-center gap-1.5">
